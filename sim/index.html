@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Solara: an island economy built in Minecraft by Team Common Ground.">
+</head>
+<body>
+<title>Solara Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&display=swap">
+<style>
+/* Layout: one game screen. Dirt background, grass edge on top, two inventory panels (rules | island status) that stack on phones. */
+:root {
+  --dirt: #2b1f15;
+  --panel: #c6c6c6;
+  --panel-hi: #ffffff;
+  --panel-lo: #555555;
+  --slot: #8b8b8b;
+  --ink: #2a2a2a;
+  --ink-soft: #4a4a4a;
+  --text: #f4f4f4;
+  --text-soft: #c9c9c9;
+  --gold: #ffff55;
+  --ok: #55ff55;
+  --warn: #ffaa00;
+  --bad: #ff5555;
+  --fish: #55c8ff;
+  --tip-bg: #150a1f;
+  --tip-edge: #4c1c9e;
+  --btn: #727272;
+  --btn-hi: #a9a9a9;
+  --btn-lo: #4c4c4c;
+  --on: #3c8527;
+  --on-hi: #6fc24a;
+  --on-lo: #24541a;
+  --font: 'Pixelify Sans', 'Courier New', monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  background: var(--dirt) url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAACHUlEQVR42gXBUY/bKBQG0A9fLtgUexTTqpOuomqkSn3Yl/3/v6ZPTSvV0SimEC7g7Dnqv38v+yYzA69G0m428uiR4ZmQcGVnl4SsTTB7whk7fRgHS6fE6e3++H2QsK6vug+650MOLafyDaeh7ZKtNKl8ovPl0xrfYx3M6ak4BJbpF94z5FRD7ko950Y/Jht4nxl9+0vfZ47shXnONh79PZMayaLYY9jgLfV94oAU8xBf3CUrYm8DWYVdDtVL0fSgonCMHo+Zu6lObJI75NAldmEznBeKEOCjsFmDK3VGwA5Enq/V3So8uq/OLGVejFSQH5cXalt99PJQWVnuOJrlivpQr4LWp7u5cg8Rop7pIPp+WdH4H/+QTHsYpXRbDr90OWyC7i9D5IZjUMsIJnXYARtudb9v5HE6Z0GdxemYIRUWBhtsdkjwADa7TruOEMDeQkP+U6q1lz/rNiOVqyvIDYCZSkkAACRsjl6/jmSHjnHlPpehFx1T76GrO9xiwn2QphVhinW7PFW29IEWlc3qBHm8+vSW9fuBF6UnuBh7RkvHqKlO5FVRINIIpgA3AAnnCT8ZYBMhnsWwAcyaBItesgAFgEZO5+oitz3g6jBnGMhe8WVptzvW2qID4K5VUAlshjMAlj31M4BtlgTUYmF+bG5ls7gOdGRBxXzRWBKx/6ioK9afW5Pp2XPpNJdFdC594Z/NBsg2dSj3BpL8/B9YPDchDCWDkQAAAABJRU5ErkJggg==) repeat;
+  background-size: 64px 64px;
+  image-rendering: pixelated;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 17px;
+  line-height: 1.35;
+  padding: 0 16px 40px;
+}
+.grass {
+  height: 28px; margin: 0 -16px 24px;
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAICAIAAAB/FOjAAAAA/UlEQVR42k2NsUrEQBRF7yQBXRkliQxJkTUrKSxEJOUKdlsttn6MlV/gD61is1gvsQ8JJOrEsJkoI+w2weLBkFc8zhzencvuHi+9iAPwBe9arWqdpGG+kUkadq0mD4AYgJWkoaq1qrVRBBSmaxMD4OQbSQ00hn3BTacXcV9wVWsA1vHrEK1sE4hWti/4chsDuHg5ULVebuN5dvr99El/2VexcPmke/sZsv1Zc1RKJQrn92/38dxajAXt4Xv+ZTHW692Q7RcnMwfANHABlFIR0CYD4Pb6vGr6WeiVUlVNzx7ub8zFeKqmnwYu7bG0yNKDYJ0V456q6ddZQbKU6h/MyIRrmU+C5AAAAABJRU5ErkJggg==) repeat-x; background-size: 56px 28px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+img.px { image-rendering: pixelated; }
+
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 18px; }
+h1 {
+  margin: 0; font-size: clamp(38px, 7vw, 72px); font-weight: 700; letter-spacing: 3px; line-height: 1;
+  color: #dcdcdc; text-shadow: 4px 4px 0 #4a4a4a, 8px 8px 0 #141414;
+  text-wrap: balance;
+}
+.sub { margin: 10px 0 0; font-size: 20px; color: var(--gold); text-shadow: 2px 2px 0 #3f3f15; }
+
+.presets { display: flex; gap: 12px; flex-wrap: wrap; }
+.mc-btn {
+  font-family: var(--font); font-size: 18px; color: var(--text);
+  background: var(--btn); border: 3px solid #000;
+  box-shadow: inset 3px 3px 0 var(--btn-hi), inset -3px -4px 0 var(--btn-lo);
+  text-shadow: 2px 2px 0 #3f3f3f;
+  padding: 10px 18px; cursor: pointer; min-height: 48px;
+}
+.mc-btn:hover { background: #7f8fbf; box-shadow: inset 3px 3px 0 #b7c3ea, inset -3px -4px 0 #4f5f8f; color: var(--gold); }
+.mc-btn:focus-visible, .toggle:focus-visible, input[type=range]:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.mc-btn.active { border-color: #fff; color: var(--gold); }
+
+.grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 22px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+.panel {
+  background: var(--panel); color: var(--ink);
+  border: 4px solid #111;
+  box-shadow: inset 4px 4px 0 var(--panel-hi), inset -4px -4px 0 var(--panel-lo);
+  padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 16px; min-width: 0;
+}
+.panel h2 { margin: 0; font-size: 22px; font-weight: 600; color: var(--ink-soft); }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.field label { font-size: 18px; font-weight: 600; }
+.val { white-space: nowrap; font-variant-numeric: tabular-nums; font-size: 18px; background: var(--slot); color: #fff; padding: 2px 10px; box-shadow: inset 2px 2px 0 #373737, inset -2px -2px 0 #fff; }
+.hint { font-size: 15px; color: var(--ink-soft); }
+
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 22px; background: transparent; margin: 0; }
+input[type=range]::-webkit-slider-runnable-track { height: 12px; background: #373737; border: 2px solid #000; }
+input[type=range]::-moz-range-track { height: 8px; background: #373737; border: 2px solid #000; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 26px; margin-top: -9px; background: var(--btn); border: 2px solid #000; box-shadow: inset 2px 2px 0 var(--btn-hi), inset -2px -2px 0 var(--btn-lo); cursor: pointer; }
+input[type=range]::-moz-range-thumb { width: 16px; height: 24px; border-radius: 0; background: var(--btn); border: 2px solid #000; cursor: pointer; }
+
+.toggles { display: flex; flex-direction: column; gap: 10px; }
+.toggle {
+  display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 12px;
+  width: 100%; text-align: left; cursor: pointer;
+  font-family: var(--font); color: var(--text); text-shadow: 2px 2px 0 #3f3f3f;
+  background: var(--btn); border: 3px solid #000;
+  box-shadow: inset 3px 3px 0 var(--btn-hi), inset -3px -4px 0 var(--btn-lo);
+  padding: 8px 12px; min-height: 60px;
+}
+.toggle img { width: 40px; height: 40px; }
+.toggle .t-name { font-size: 18px; display: block; }
+.toggle .t-why { font-size: 14px; color: #e2e2e2; display: block; }
+.toggle .state { font-size: 18px; font-weight: 700; padding: 4px 10px; background: #3a3a3a; border: 2px solid #000; min-width: 58px; text-align: center; }
+.toggle[aria-pressed="true"] { background: var(--on); box-shadow: inset 3px 3px 0 var(--on-hi), inset -3px -4px 0 var(--on-lo); }
+.toggle[aria-pressed="true"] .state { background: #1d3f12; color: var(--ok); }
+.toggle[aria-pressed="false"] .state { color: var(--bad); }
+
+/* status */
+.yearbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.yearbar .mc-btn { min-width: 150px; }
+.yearbar .field { flex: 1; min-width: 180px; }
+.pop { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 600; }
+.pop img { width: 32px; height: 32px; }
+
+.bars { display: flex; flex-direction: column; gap: 10px; }
+.bar { display: grid; grid-template-columns: 96px minmax(0, 1fr) 156px; align-items: center; gap: 10px; }
+.bar .name { font-size: 18px; font-weight: 600; }
+.icons { display: flex; gap: 2px; flex-wrap: nowrap; min-width: 0; }
+.icons img { width: 28px; height: 28px; flex: 0 1 28px; min-width: 14px; }
+.icons img.off { filter: grayscale(1) brightness(0.55); opacity: 0.5; }
+.badge { font-size: 15px; font-weight: 700; padding: 3px 8px; border: 2px solid #000; text-align: center; font-variant-numeric: tabular-nums; }
+.badge.ok { background: #1d3f12; color: var(--ok); }
+.badge.warn { background: #4a3000; color: var(--warn); }
+.badge.bad { background: #4a0f0f; color: var(--bad); }
+@media (max-width: 520px) {
+  .bar { grid-template-columns: 74px minmax(0, 1fr); }
+  .bar .badge { grid-column: 2; justify-self: start; }
+  .icons img { width: 22px; height: 22px; }
+}
+
+.chartbox { background: #1e1e1e; border: 3px solid #000; box-shadow: inset 3px 3px 0 #000, inset -3px -3px 0 #3a3a3a; padding: 10px; }
+canvas { display: block; width: 100%; height: 220px; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 15px; color: var(--text-soft); padding: 6px 4px 0; }
+.legend span::before { content: ""; display: inline-block; width: 14px; height: 6px; margin-right: 6px; vertical-align: middle; background: var(--c); }
+
+.toast {
+  display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 14px; align-items: center;
+  background: #202020; border: 4px solid #0a0a0a; box-shadow: inset 3px 3px 0 #5a5a5a, inset -3px -3px 0 #141414;
+  padding: 12px 16px; color: var(--text);
+}
+.toast img { width: 48px; height: 48px; }
+.toast .t1 { font-size: 16px; color: var(--gold); }
+.toast.bad .t1 { color: var(--bad); }
+.toast .t2 { font-size: 20px; }
+
+.log { background: var(--tip-bg); border: 3px solid var(--tip-edge); box-shadow: 0 0 0 3px #0b0410; color: #dcdcdc; padding: 12px 16px; font-size: 16px; display: flex; flex-direction: column; gap: 4px; }
+.log b { color: var(--fish); font-weight: 600; }
+
+footer { font-size: 15px; color: var(--text-soft); text-shadow: 2px 2px 0 #000; display: flex; flex-direction: column; gap: 4px; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="grass" aria-hidden="true"></div>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>SOLARA SIMULATOR</h1>
+      <p class="sub">What happens to our island in 10 years?</p>
+    </div>
+    <div class="presets">
+      <button class="mc-btn" id="p-none" type="button">No rules</button>
+      <button class="mc-btn" id="p-plan" type="button">Our 6 rules</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="rules-h">
+      <h2 id="rules-h">Rules</h2>
+
+      <div class="field">
+        <div class="field-top"><label for="growth">Population growth</label><span class="val" id="growth-v">4% / year</span></div>
+        <input type="range" id="growth" min="0" max="8" step="1" value="4">
+        <span class="hint">Starts at 40 people. More people need more food, water and space.</span>
+      </div>
+
+      <div class="field">
+        <div class="field-top"><label for="days">Fishing days per week</label><span class="val" id="days-v">3</span></div>
+        <input type="range" id="days" min="1" max="7" step="1" value="3">
+        <span class="hint">Rule 1 says 3 days. More days = more food now, fewer fish later.</span>
+      </div>
+
+      <div class="toggles">
+        <button class="toggle" type="button" id="replant" aria-pressed="true">
+          <img class="px" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA80lEQVR42mNgwAKKd3j9Vw2T+g+jVcOk/vtPM/mPTS0jNs3oYnfuvWK4duAZAwMDA8PtVc8YcRqASzM62Jh1Bq6PCVnzpnkXUBTC+DDbYUAvS/4/hgEMDAwMfkkGKDZrOUgxMDAwMGg5SMENuX/lNcP3N78ZMAxAth2bs7UcpBjuX3nNwMDAwMApwoppAMx2ZM3XDjxDsRkbQHEBcmjDbIXZjOxsrAbAogfmbxjAZvOlaQ8ZcaYD/2km/5Fdgezf729+408HyIbcv/Kawee1IMODF58YTkv+wJqICIKqUIP/UbZK//GpYWKgEAxiA5D9ji8cAK6ceyMQ7el3AAAAAElFTkSuQmCC" alt="">
+          <span><span class="t-name">Rule 2: Cut 1 tree, plant 2</span><span class="t-why">Forest grows back</span></span>
+          <span class="state">ON</span>
+        </button>
+        <button class="toggle" type="button" id="bamboo" aria-pressed="true">
+          <img class="px" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAsElEQVR42mNgoDZYcSfqf8k2k/9+XUr/kcXj11v9x6aehZCBXaeD/l998oJhYeAxRpIN6Dod9L/MdB0jPjV4DYBpXnEn6v+ZW7cYbl15x7Cp7B4jXgMm9+0lKcxY0APKU1eBAWYbMYAJ5tf49Vb/cQUUtrCBxQoLsl9xAWRvoQcsEzE25hY5M1j6yDIIK3BjWEZxIDLhsw0fQAkDUgB6yiTKAGRvoYcByYFIMCmTGogAkVpUQmsz5aAAAAAASUVORK5CYII=" alt="">
+          <span><span class="t-name">Rule 3: Build with bamboo first</span><span class="t-why">Half as many trees cut</span></span>
+          <span class="state">ON</span>
+        </button>
+        <button class="toggle" type="button" id="tanks" aria-pressed="true">
+          <img class="px" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAh0lEQVR42mNgoCWQte//L2vf/x+fGhZ8mpXMQ2Hc/48PFjJiU8dEqSuZiLCdQck8lAGXV6jvAnTbCbkCpwvKYqRJdwHMdlya+WUMMVyB0wVdS56SHwvEaiYpFt4+vUPYgMcHCxnvnVyNU/PHJ+cZ0FMkI66ExC9jiCKGTTNOA2CGoLuOJjkWACY2OFieqGaGAAAAAElFTkSuQmCC" alt="">
+          <span><span class="t-name">Rule 4: Rainwater tanks</span><span class="t-why">More drinking water than 1 pond</span></span>
+          <span class="state">ON</span>
+        </button>
+        <button class="toggle" type="button" id="protect" aria-pressed="true">
+          <img class="px" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAkUlEQVR42mNgwAPslHj+MxAATAwUAiZCthNyBQsuzeXOggwqqooMd27fZ2BgYPh/6N4XRqJcgEUzQ7mzIE6X4PTCndv3GU7e/0ZeGKioKjIwMDAwmCtyMTAwMDDcfPmTNANgTifbBTAAcwFZBhBjO14DiPE/VgMO3fvC2Ln3PYrmDVe+MeBKB4zE5ANcmocJAABySzkx3ZDJHQAAAABJRU5ErkJggg==" alt="">
+          <span><span class="t-name">Rule 5: Protect Maikuduk</span><span class="t-why">OFF = cut jungle for 24 more homes</span></span>
+          <span class="state">ON</span>
+        </button>
+        <button class="toggle" type="button" id="buildUp" aria-pressed="true">
+          <img class="px" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAqUlEQVR42mNgoCWwUhL5b6Uk8h+fGhZ8mvMUpWHc/8fuvWHEpo6JkOZrrz8w5ClKM+ByCRMhzVqiAgwMDAw4DWHCpvna6w8MDAwMcM0wPjZDGHH4GS+YdP8pAyxMGGGayY0pFBes2zqJaI1B3nkMx+69YWQixbblP70Ylv/0IpwOJlX3wNl5rSUMZCUkbCCSfRtxCYkQeHD3DmED0vL0SI8FUl2CK3+QBAAPRj+QrWB8ggAAAABJRU5ErkJggg==" alt="">
+          <span><span class="t-name">Rule 6: Build up, not out</span><span class="t-why">2nd floors: room for 36 more people</span></span>
+          <span class="state">ON</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="status-h">
+      <h2 id="status-h">Island status</h2>
+
+      <div class="yearbar">
+        <button class="mc-btn" id="play" type="button">Play 10 years</button>
+        <div class="field">
+          <div class="field-top"><label for="year">Year</label><span class="val" id="year-v">10</span></div>
+          <input type="range" id="year" min="0" max="10" step="1" value="10">
+        </div>
+      </div>
+
+      <div class="pop"><img class="px" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAApElEQVR42mNgoBAwogtoyQj9x6fh2pN3KHpY0DUrCHEQsFPoP7IhLNiUzOgowqo1o6IPQ4yJWM0MDAwMFWkBhA1gYGBg8Cydj5dP0IDt3Yl4+TgDERkc23IMhW/lY0V8NM6oiMAeiB0rMKKRET3+mZ2a8Ebi3311KOmBEaaZ2amJQUhRm6jU9+7+VYa/++oYrj15x8hEaVIeeAMYiclAxGYssgAAbeU0KdqV46IAAAAASUVORK5CYII=" alt=""><span id="pop">Population: 65</span></div>
+
+      <div class="bars">
+        <div class="bar"><span class="name">Food</span><div class="icons" id="b-food"></div><span class="badge" id="s-food"></span></div>
+        <div class="bar"><span class="name">Water</span><div class="icons" id="b-water"></div><span class="badge" id="s-water"></span></div>
+        <div class="bar"><span class="name">Space</span><div class="icons" id="b-space"></div><span class="badge" id="s-space"></span></div>
+        <div class="bar"><span class="name">Fish</span><div class="icons" id="b-fish"></div><span class="badge" id="s-fish"></span></div>
+        <div class="bar"><span class="name">Forest</span><div class="icons" id="b-trees"></div><span class="badge" id="s-trees"></span></div>
+      </div>
+
+      <div class="toast" id="toast" role="status" aria-live="polite">
+        <img class="px" id="toast-img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA80lEQVR42mNgwAKKd3j9Vw2T+g+jVcOk/vtPM/mPTS0jNs3oYnfuvWK4duAZAwMDA8PtVc8YcRqASzM62Jh1Bq6PCVnzpnkXUBTC+DDbYUAvS/4/hgEMDAwMfkkGKDZrOUgxMDAwMGg5SMENuX/lNcP3N78ZMAxAth2bs7UcpBjuX3nNwMDAwMApwoppAMx2ZM3XDjxDsRkbQHEBcmjDbIXZjOxsrAbAogfmbxjAZvOlaQ8ZcaYD/2km/5Fdgezf729+408HyIbcv/Kawee1IMODF58YTkv+wJqICIKqUIP/UbZK//GpYWKgEAxiA5D9ji8cAK6ceyMQ7el3AAAAAElFTkSuQmCC" alt="">
+        <div><div class="t1" id="toast-1">Advancement Made!</div><div class="t2" id="toast-2">Solara survived 10 years</div></div>
+      </div>
+
+      <div class="chartbox">
+        <canvas id="chart" aria-label="Line chart of fish, forest and food over 10 years"></canvas>
+        <div class="legend">
+          <span style="--c: var(--fish)">Fish in the sea</span>
+          <span style="--c: var(--ok)">Forest</span>
+          <span style="--c: var(--warn)">Food for everyone</span>
+        </div>
+      </div>
+
+      <div class="log" id="log"></div>
+    </section>
+  </div>
+
+  <footer>
+    <span>A simple game model made by Team Common Ground. The numbers are made up to show the idea, not real data.</span>
+    <span>Green = enough. Yellow = getting low. Red = crisis.</span>
+  </footer>
+</div>
+
+<script>
+// Solara island model. All numbers are made-up "game units", not real data.
+function simulate(o, years) {
+  years = years || 10;
+  const K_FISH = 1000, K_TREES = 600;
+  let pop = 40;
+  let fish = 800;
+  let trees = o.protect ? 500 : 300;            // clearing Maikuduk removes 200 trees
+  const rows = [];
+  for (let y = 0; y <= years; y++) {
+    // space
+    let capacity = 44 + (o.buildUp ? 36 : 0) + (o.protect ? 0 : 24);
+    // fish
+    const wantFish = pop * o.days * 0.6;
+    const catchF = Math.min(wantFish, fish * 0.9);
+    // wood
+    const wantWood = pop * 3 * (o.bamboo ? 0.5 : 1);
+    const cut = Math.min(wantWood, trees);
+    // water
+    const supply = 1000 + (o.tanks ? 450 : 0);
+    const needW = pop * 22;
+    // food: farm + fish (+ cocoa cookies if jungle kept)
+    const farm = Math.min(pop * 8, 480);          // farmland is limited
+    const cookies = o.protect ? pop * 0.5 : 0;     // cocoa only grows in Maikuduk
+    const food = farm + cookies + catchF;
+    const needFood = pop * 10;
+
+    rows.push({
+      year: y, pop: Math.round(pop),
+      fish: Math.round(fish), fishPct: fish / K_FISH,
+      trees: Math.round(trees), treePct: trees / K_TREES,
+      water: Math.min(supply / needW, 1.5),
+      food: Math.min(food / needFood, 1.5),
+      space: Math.min(capacity / pop, 1.5),
+      catchF: Math.round(catchF), cut: Math.round(cut)
+    });
+
+    // next year
+    fish = fish - catchF;
+    fish = fish + 0.4 * fish * (1 - fish / K_FISH);
+    fish = Math.max(0, Math.min(K_FISH, fish));
+    const regrow = 0.03 * trees * (1 - trees / K_TREES) + (o.replant ? cut * 1.2 : 0);
+    trees = Math.max(0, Math.min(K_TREES, trees - cut + regrow));
+    pop = pop * (1 + o.growth / 100);
+  }
+  return rows;
+}
+
+
+
+const ICON = { food: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAi0lEQVR42mNgGPKAkZCCKCvR/8j8Zcdeo+hhIaQxK0AVXeo/siGMhDRq29oyXD18GE4zMDAwTNtwG+4SFnTN6BoJASZ8mgnZjmIAMiBWMzwMkG3HBbBpRnHBqSuvSdaMEYinrrxmMNMRRdGILe6xJqQoK9H/JioCDAwMDAxn7nwgqBFn4kFPeYMfAADwgFkbBElyCQAAAABJRU5ErkJggg==", water: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAh0lEQVR42mNgoCWQte//L2vf/x+fGhZ8mpXMQ2Hc/48PFjJiU8dEqSuZiLCdQck8lAGXV6jvAnTbCbkCpwvKYqRJdwHMdlya+WUMMVyB0wVdS56SHwvEaiYpFt4+vUPYgMcHCxnvnVyNU/PHJ+cZ0FMkI66ExC9jiCKGTTNOA2CGoLuOJjkWACY2OFieqGaGAAAAAElFTkSuQmCC", space: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAqUlEQVR42mNgoCWwUhL5b6Uk8h+fGhZ8mvMUpWHc/8fuvWHEpo6JkOZrrz8w5ClKM+ByCRMhzVqiAgwMDAw4DWHCpvna6w8MDAwMcM0wPjZDGHH4GS+YdP8pAyxMGGGayY0pFBes2zqJaI1B3nkMx+69YWQixbblP70Ylv/0IpwOJlX3wNl5rSUMZCUkbCCSfRtxCYkQeHD3DmED0vL0SI8FUl2CK3+QBAAPRj+QrWB8ggAAAABJRU5ErkJggg==", fish: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAApElEQVR42mNgGPKAEZeEtpX7fxj76rGdONWx4NLoEpaILPwfl0GM6BrruvpxOvfYmUsMe1bNZ7h6bCcjTD0LTHNdVz9DmLUmg5CQEMOMzUexGmBlosfAwJDIwMDA8N8lLJHBykSPgRGmmVhw7MwlOHvPqvkMTNgUXbt5FysbWTNKGBDrCuQwyJ+w4r+ViR5mIKKFPgqAaUZWz0go/mF8fGlhpAMA9StMn4/NRqsAAAAASUVORK5CYII=", trees: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA80lEQVR42mNgwAKKd3j9Vw2T+g+jVcOk/vtPM/mPTS0jNs3oYnfuvWK4duAZAwMDA8PtVc8YcRqASzM62Jh1Bq6PCVnzpnkXUBTC+DDbYUAvS/4/hgEMDAwMfkkGKDZrOUgxMDAwMGg5SMENuX/lNcP3N78ZMAxAth2bs7UcpBjuX3nNwMDAwMApwoppAMx2ZM3XDjxDsRkbQHEBcmjDbIXZjOxsrAbAogfmbxjAZvOlaQ8ZcaYD/2km/5Fdgezf729+408HyIbcv/Kawee1IMODF58YTkv+wJqICIKqUIP/UbZK//GpYWKgEAxiA5D9ji8cAK6ceyMQ7el3AAAAAElFTkSuQmCC" };
+const state = { growth: 4, days: 3, replant: true, bamboo: true, tanks: true, protect: true, buildUp: true };
+const TOGGLES = ['replant', 'bamboo', 'tanks', 'protect', 'buildUp'];
+let rows = [], year = 10, timer = null;
+
+const $ = id => document.getElementById(id);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+function level(kind, v) {
+  if (kind === 'fish' || kind === 'trees') return v >= 0.5 ? 'ok' : v >= 0.2 ? 'warn' : 'bad';
+  return v >= 1 ? 'ok' : v >= 0.8 ? 'warn' : 'bad';
+}
+const WORD = { ok: 'enough', warn: 'low', bad: 'crisis' };
+
+function drawIcons(id, frac, src) {
+  const box = $(id);
+  if (box.children.length !== 10) {
+    box.innerHTML = '';
+    for (let i = 0; i < 10; i++) { const im = new Image(); im.className = 'px'; im.alt = ''; im.src = src; box.appendChild(im); }
+  }
+  const n = Math.round(Math.max(0, Math.min(1, frac)) * 10);
+  [...box.children].forEach((im, i) => im.classList.toggle('off', i >= n));
+}
+
+function render() {
+  const r = rows[year];
+  $('year-v').textContent = year;
+  $('pop').textContent = 'Population: ' + r.pop + ' people';
+  const show = {
+    food: [r.food, r.food, Math.round(r.food * 100) + '%'],
+    water: [r.water, r.water, Math.round(r.water * 100) + '%'],
+    space: [r.space, r.space, Math.round(r.space * 100) + '%'],
+    fish: [r.fishPct, r.fishPct, r.fish + ' fish'],
+    trees: [r.treePct, r.treePct, r.trees + ' trees']
+  };
+  for (const k in show) {
+    const [frac, v, label] = show[k];
+    const lv = level(k, v);
+    drawIcons('b-' + k, k === 'fish' || k === 'trees' ? frac : Math.min(frac, 1), ICON[k]);
+    const b = $('s-' + k); b.className = 'badge ' + lv; b.textContent = label + ' · ' + WORD[lv];
+  }
+  // outcome over the whole 10 years
+  const crisis = findCrisis();
+  const t = $('toast');
+  if (crisis) {
+    t.classList.add('bad');
+    $('toast-1').textContent = 'Crisis in year ' + crisis.year;
+    $('toast-2').textContent = crisis.text;
+    $('toast-img').src = ICON[crisis.kind];
+  } else {
+    t.classList.remove('bad');
+    $('toast-1').textContent = 'Advancement Made!';
+    $('toast-2').textContent = 'Solara survived 10 years';
+    $('toast-img').src = ICON.trees;
+  }
+  $('log').innerHTML =
+    '<span><b>Year ' + year + ':</b> fishers caught ' + r.catchF + ' fish, builders cut ' + r.cut + ' trees.</span>' +
+    '<span>' + tip() + '</span>';
+  drawChart();
+}
+
+function findCrisis() {
+  const TEXT = { fish: 'The fishing area is almost empty', trees: 'Almost no trees left', water: 'Not enough drinking water', food: 'People are going hungry', space: 'Brooklyn is too crowded' };
+  for (const r of rows) {
+    const checks = { fish: r.fishPct, trees: r.treePct, water: r.water, food: r.food, space: r.space };
+    for (const k in checks) if (level(k, checks[k]) === 'bad') return { year: r.year, kind: k, text: TEXT[k] };
+  }
+  return null;
+}
+
+function tip() {
+  if (state.days > 3 && rows[0].food > rows[10].food) return 'Opportunity cost: more fishing gives more food now, but fewer fish later.';
+  if (!state.protect) return 'Opportunity cost: we got 24 more homes, but lost 200 trees and our cocoa.';
+  if (!state.buildUp) return 'Without 2nd floors, new people have nowhere to live.';
+  if (!state.tanks) return 'One pond is not enough when the population grows.';
+  if (state.growth >= 6) return 'Even good rules struggle if the population grows this fast.';
+  return 'Use a bit less today, so there is enough tomorrow.';
+}
+
+function drawChart() {
+  const c = $('chart'), dpr = window.devicePixelRatio || 1;
+  const w = c.clientWidth, h = c.clientHeight;
+  if (!w) return;
+  c.width = w * dpr; c.height = h * dpr;
+  const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  const L = 44, R = 12, T = 12, B = 30, pw = w - L - R, ph = h - T - B;
+  const X = i => L + pw * i / 10, Y = v => T + ph * (1 - Math.min(v, 1.2) / 1.2);
+  g.font = '14px ' + css('--font'); g.fillStyle = css('--text-soft'); g.strokeStyle = '#333'; g.lineWidth = 1;
+  for (const v of [0, 0.4, 0.8, 1.2]) {
+    g.beginPath(); g.moveTo(L, Y(v) + 0.5); g.lineTo(w - R, Y(v) + 0.5); g.stroke();
+    g.textAlign = 'right'; g.textBaseline = 'middle'; g.fillText(Math.round(v * 100) + '%', L - 6, Y(v));
+  }
+  g.textAlign = 'center'; g.textBaseline = 'top';
+  for (let i = 0; i <= 10; i += 2) g.fillText('Y' + i, X(i), h - B + 8);
+  // "enough" line for food
+  g.setLineDash([6, 6]); g.strokeStyle = '#666'; g.beginPath(); g.moveTo(L, Y(1) + 0.5); g.lineTo(w - R, Y(1) + 0.5); g.stroke(); g.setLineDash([]);
+  // year marker
+  g.fillStyle = 'rgba(255,255,85,0.12)'; g.fillRect(X(year) - 10, T, 20, ph);
+  const series = [['fishPct', css('--fish')], ['treePct', css('--ok')], ['food', css('--warn')]];
+  for (const [key, col] of series) {
+    g.strokeStyle = col; g.lineWidth = 4; g.lineJoin = 'miter'; g.beginPath();
+    rows.forEach((r, i) => { const x = X(i), y = Y(r[key]); i ? g.lineTo(x, y) : g.moveTo(x, y); });
+    g.stroke();
+    g.fillStyle = col; const r = rows[year]; g.fillRect(X(year) - 5, Y(r[key]) - 5, 10, 10);
+  }
+}
+
+function recompute() {
+  rows = simulate(state, 10);
+  $('growth-v').textContent = state.growth + '% / year';
+  $('days-v').textContent = state.days;
+  TOGGLES.forEach(k => { const b = $(k); b.setAttribute('aria-pressed', String(state[k])); b.querySelector('.state').textContent = state[k] ? 'ON' : 'OFF'; });
+  const isNone = state.days === 7 && TOGGLES.every(k => !state[k]);
+  const isPlan = state.days === 3 && TOGGLES.every(k => state[k]);
+  $('p-none').classList.toggle('active', isNone);
+  $('p-plan').classList.toggle('active', isPlan);
+  render();
+}
+
+function stop() { if (timer) { clearInterval(timer); timer = null; $('play').textContent = 'Play 10 years'; } }
+function play() {
+  stop();
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) { year = 10; $('year').value = 10; render(); return; }
+  year = 0; $('year').value = 0; render();
+  $('play').textContent = 'Playing...';
+  timer = setInterval(() => {
+    year++; $('year').value = year; render();
+    if (year >= 10) stop();
+  }, 650);
+}
+
+$('growth').addEventListener('input', e => { state.growth = +e.target.value; recompute(); });
+$('days').addEventListener('input', e => { state.days = +e.target.value; recompute(); });
+$('year').addEventListener('input', e => { stop(); year = +e.target.value; render(); });
+TOGGLES.forEach(k => $(k).addEventListener('click', () => { state[k] = !state[k]; recompute(); }));
+$('play').addEventListener('click', play);
+$('p-none').addEventListener('click', () => { state.days = 7; TOGGLES.forEach(k => state[k] = false); $('days').value = 7; recompute(); play(); });
+$('p-plan').addEventListener('click', () => { state.days = 3; TOGGLES.forEach(k => state[k] = true); $('days').value = 3; recompute(); play(); });
+window.addEventListener('resize', drawChart);
+document.fonts && document.fonts.ready.then(drawChart);
+recompute();
+</script>
+
+</body>
+</html>
