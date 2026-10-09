@@ -1,6 +1,6 @@
 # Solara: an island economy
 
-Economics summative by **Team Common Ground**. Case: Population and Consumption.
+Economics summative by **Team Common Ground**: Yeraly, Alim, Medet and Aslan. Case: Population and Consumption.
 
 Solara is an island we built in Minecraft. It has a mixed economy and two districts: Brooklyn, where people live, and Maikuduk, the protected jungle.
 
